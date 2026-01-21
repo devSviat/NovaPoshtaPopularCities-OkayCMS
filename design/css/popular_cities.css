@@ -1,0 +1,71 @@
+.np_popular_cities {
+    margin-top: 15px;
+}
+
+.np_popular_cities__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+@media (max-width: 768px) {
+    .np_popular_cities__list {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+        padding-bottom: 4px;
+    }
+
+    .np_popular_cities__list::-webkit-scrollbar {
+        height: 2px;
+    }
+
+    .np_popular_cities__list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .np_popular_cities__list::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 2px;
+    }
+
+    .np_popular_city__btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
+
+.np_popular_city__btn {
+    padding: 4px 10px;
+    color: #333;
+    background: linear-gradient(0deg, #fff, transparent);
+    border: 1px solid #fff !important;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px -1px rgba(31, 31, 31, 0.05), 0 2px 4px -2px rgba(31, 31, 31, 0.05);
+}
+
+.np_popular_city__btn:hover {
+    background: linear-gradient(0deg, #fff, #f5f5f5);
+    box-shadow: 0 1px 2px -1px rgba(31, 31, 31, 0.05), 0 2px 2px -2px rgba(31, 31, 31, 0.05);
+}
+
+.np_popular_city__btn:active {
+    background: linear-gradient(0deg, #f5f5f5, transparent);
+    box-shadow: 0 1px 2px -1px rgba(31, 31, 31, 0.03), 0 2px 2px -2px rgba(31, 31, 31, 0.05);
+}
+
+.np_popular_city__btn.active {
+    background: linear-gradient(0deg, #f5f5f5, transparent);
+    box-shadow: 0 1px 2px -1px rgba(31, 31, 31, 0.03), 0 2px 2px -2px rgba(31, 31, 31, 0.05);
+    pointer-events: none;
+    cursor: default;
+}
+
+.np_popular_city__btn.active:hover {
+    background: linear-gradient(0deg, #f5f5f5, transparent);
+    box-shadow: 0 1px 2px -1px rgba(31, 31, 31, 0.03), 0 2px 2px -2px rgba(31, 31, 31, 0.05);
+}
