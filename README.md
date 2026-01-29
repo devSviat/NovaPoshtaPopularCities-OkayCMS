@@ -28,6 +28,13 @@
    git clone https://github.com/devSviat/NovaPoshtaPopularCities-OkayCMS.git NovaPoshtaPopularCities
    ```
 
+### Результат встановлення
+
+Шлях до модуля має бути таким:
+   ```bash
+   {OkayCMS_root}/Okay/Modules/Sviat/NovaPoshtaPopularCities/
+   ```
+
 ## Використання
 
 ### Адмін-панель
