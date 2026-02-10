@@ -43,8 +43,170 @@
             });
         }
         
+        function getClientIp(callback) {
+            $.ajax({
+                url: 'https://api.ipify.org?format=json',
+                type: 'GET',
+                dataType: 'json',
+                timeout: 5000,
+                success: function(data) {
+                    var clientIp = data.ip;
+                    if (callback) {
+                        callback(clientIp);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $.ajax({
+                        url: 'https://api64.ipify.org?format=json',
+                        type: 'GET',
+                        dataType: 'json',
+                        timeout: 5000,
+                        success: function(data) {
+                            var clientIp = data.ip;
+                            if (callback) {
+                                callback(clientIp);
+                            }
+                        },
+                        error: function() {
+                            console.error('[NovaPoshtaPopularCities] getClientIp: Failed to get client IP');
+                            if (callback) {
+                                callback(null);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        function getClientIp(callback) {
+            $.ajax({
+                url: 'https://api.ipify.org?format=json',
+                type: 'GET',
+                dataType: 'json',
+                timeout: 5000,
+                success: function(data) {
+                    var clientIp = data.ip;
+                    if (callback) {
+                        callback(clientIp);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $.ajax({
+                        url: 'https://api64.ipify.org?format=json',
+                        type: 'GET',
+                        dataType: 'json',
+                        timeout: 5000,
+                        success: function(data) {
+                            var clientIp = data.ip;
+                            if (callback) {
+                                callback(clientIp);
+                            }
+                        },
+                        error: function() {
+                            console.error('[NovaPoshtaPopularCities] getClientIp: Failed to get client IP');
+                            if (callback) {
+                                callback(null);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        function getCityByIpAndAddToList() {
+            var $popularCitiesBlock = $('.np_popular_cities');
+            if (!$popularCitiesBlock.length) {
+                return;
+            }
+            
+            var enableIpDetection = $popularCitiesBlock.data('enable-ip-detection');
+            if (!enableIpDetection || enableIpDetection == 0) {
+                return;
+            }
+            
+            var $popularCitiesList = $popularCitiesBlock.find('.np_popular_cities__list');
+            if (!$popularCitiesList.length) {
+                return;
+            }
+            
+            if (!okay || !okay.router || !okay.router['Sviat_NovaPoshtaPopularCities_get_city_by_ip']) {
+                console.error('[NovaPoshtaPopularCities] Route not found');
+                return;
+            }
+            
+            var apiUrl = okay.router['Sviat_NovaPoshtaPopularCities_get_city_by_ip'];
+            
+            var existingCityByIp = $popularCitiesList.find('.np_popular_city__btn[data-city-by-ip="true"]');
+            if (existingCityByIp.length > 0) {
+                existingCityByIp.first().prependTo($popularCitiesList);
+                return;
+            }
+            
+            var savedCityRef = localStorage.getItem('np_city_by_ip_ref');
+            var savedCityName = localStorage.getItem('np_city_by_ip_name');
+            
+            if (savedCityRef && savedCityName) {
+                var savedCityInList = $popularCitiesList.find('.np_popular_city__btn[data-city-ref="' + savedCityRef + '"]');
+                if (savedCityInList.length > 0) {
+                    savedCityInList.first().prependTo($popularCitiesList);
+                    savedCityInList.first().attr('data-city-by-ip', 'true');
+                    return;
+                }
+            }
+            
+            getClientIp(function(clientIp) {
+                if (!clientIp) {
+                    console.error('[NovaPoshtaPopularCities] Could not get client IP');
+                    return;
+                }
+                
+                $.ajax({
+                    url: apiUrl,
+                    type: 'GET',
+                    data: {
+                        ip: clientIp
+                    },
+                    dataType: 'json',
+                    timeout: 10000,
+                    success: function(response) {
+                        if (response && response.success && response.city) {
+                            var cityRef = response.city.ref;
+                            var cityName = response.city.name;
+                            
+                            var existingCity = $popularCitiesList.find('.np_popular_city__btn[data-city-ref="' + cityRef + '"]');
+                            if (existingCity.length > 0) {
+                                existingCity.first().prependTo($popularCitiesList);
+                                existingCity.first().attr('data-city-by-ip', 'true');
+                                localStorage.setItem('np_city_by_ip_ref', cityRef);
+                                localStorage.setItem('np_city_by_ip_name', cityName);
+                            } else {
+                                var $newCityBtn = $('<button>')
+                                    .attr('type', 'button')
+                                    .addClass('np_popular_city__btn')
+                                    .attr('data-city-ref', cityRef)
+                                    .attr('data-city-name', cityName)
+                                    .attr('data-city-by-ip', 'true')
+                                    .text(cityName);
+                                
+                                $popularCitiesList.prepend($newCityBtn);
+                                localStorage.setItem('np_city_by_ip_ref', cityRef);
+                                localStorage.setItem('np_city_by_ip_name', cityName);
+                            }
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('[NovaPoshtaPopularCities] AJAX error: ' + error);
+                    }
+                });
+            });
+        }
+        
         $(document).ready(function() {
             updateActiveCityButton();
+            
+            setTimeout(function() {
+                getCityByIpAndAddToList();
+            }, 500);
             
             $(document).on('change', 'input[name="novaposhta_delivery_city_id"]', function() {
                 updateActiveCityButton();
@@ -52,6 +214,7 @@
             
             $(document).on('change', 'input[name="delivery_id"]', function() {
                 setTimeout(updateActiveCityButton, 100);
+                setTimeout(getCityByIpAndAddToList, 200);
             });
             
             $(document).on('click', '.np_popular_city__btn', function(e) {

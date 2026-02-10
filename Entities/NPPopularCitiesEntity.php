@@ -31,21 +31,38 @@ class NPPopularCitiesEntity extends Entity
         
         $SL = \Okay\Core\ServiceLocator::getInstance();
         $entityFactory = $SL->getService(\Okay\Core\EntityFactory::class);
-        $npCitiesEntity = $entityFactory->get(\Okay\Modules\OkayCMS\NovaposhtaCost\Entities\NPCitiesEntity::class);
+        $settlementsEntity = $entityFactory->get(\Okay\Modules\Sviat\NovaPoshtaPopularCities\Entities\NPSettlementsEntity::class);
         
         $cityRefs = [];
         foreach ($popularCities as $popularCity) {
-            $cityRefs[] = $popularCity->city_ref;
+            if (!empty($popularCity->city_ref)) {
+                $cityRefs[] = $popularCity->city_ref;
+            }
         }
         
-        $cities = $npCitiesEntity->mappedBy('ref')->find(['ref' => $cityRefs]);
+        if (empty($cityRefs)) {
+            return [];
+        }
+        
+        $settlements = $settlementsEntity->find(['city_ref' => $cityRefs]);
+        
+        $settlementsMap = [];
+        foreach ($settlements as $settlement) {
+            if (!empty($settlement->city_ref)) {
+                $settlementsMap[$settlement->city_ref] = $settlement;
+            }
+        }
         
         $result = [];
         foreach ($popularCities as $popularCity) {
-            if (isset($cities[$popularCity->city_ref])) {
-                $city = $cities[$popularCity->city_ref];
-                $popularCity->name = $city->name;
-                $popularCity->ref = $city->ref;
+            if (empty($popularCity->city_ref)) {
+                continue;
+            }
+            
+            if (isset($settlementsMap[$popularCity->city_ref])) {
+                $settlement = $settlementsMap[$popularCity->city_ref];
+                $popularCity->name = $settlement->city_name;
+                $popularCity->ref = $settlement->ref;
                 $result[] = $popularCity;
             }
         }
