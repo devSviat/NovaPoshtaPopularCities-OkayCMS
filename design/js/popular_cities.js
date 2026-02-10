@@ -78,41 +78,6 @@
             });
         }
         
-        function getClientIp(callback) {
-            $.ajax({
-                url: 'https://api.ipify.org?format=json',
-                type: 'GET',
-                dataType: 'json',
-                timeout: 5000,
-                success: function(data) {
-                    var clientIp = data.ip;
-                    if (callback) {
-                        callback(clientIp);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    $.ajax({
-                        url: 'https://api64.ipify.org?format=json',
-                        type: 'GET',
-                        dataType: 'json',
-                        timeout: 5000,
-                        success: function(data) {
-                            var clientIp = data.ip;
-                            if (callback) {
-                                callback(clientIp);
-                            }
-                        },
-                        error: function() {
-                            console.error('[NovaPoshtaPopularCities] getClientIp: Failed to get client IP');
-                            if (callback) {
-                                callback(null);
-                            }
-                        }
-                    });
-                }
-            });
-        }
-        
         function getCityByIpAndAddToList() {
             var $popularCitiesBlock = $('.np_popular_cities');
             if (!$popularCitiesBlock.length) {
@@ -136,20 +101,45 @@
             
             var apiUrl = okay.router['Sviat_NovaPoshtaPopularCities_get_city_by_ip'];
             
-            var existingCityByIp = $popularCitiesList.find('.np_popular_city__btn[data-city-by-ip="true"]');
-            if (existingCityByIp.length > 0) {
-                existingCityByIp.first().prependTo($popularCitiesList);
-                return;
-            }
-            
             var savedCityRef = localStorage.getItem('np_city_by_ip_ref');
             var savedCityName = localStorage.getItem('np_city_by_ip_name');
             
+            function processCity(cityRef, cityName) {
+                var existingCities = $popularCitiesList.find('.np_popular_city__btn[data-city-ref="' + cityRef + '"]');
+                
+                if (existingCities.length > 0) {
+                    var $firstCity = existingCities.first();
+                    var $firstInList = $popularCitiesList.children().first();
+                    
+                    if (existingCities.length > 1) {
+                        existingCities.slice(1).remove();
+                    }
+                    
+                    if ($firstCity[0] !== $firstInList[0]) {
+                        $firstCity.prependTo($popularCitiesList);
+                    }
+                    
+                    $firstCity.attr('data-city-by-ip', 'true');
+                } else {
+                    var $newCityBtn = $('<button>')
+                        .attr('type', 'button')
+                        .addClass('np_popular_city__btn')
+                        .attr('data-city-ref', cityRef)
+                        .attr('data-city-name', cityName)
+                        .attr('data-city-by-ip', 'true')
+                        .text(cityName);
+                    
+                    $popularCitiesList.prepend($newCityBtn);
+                }
+                
+                localStorage.setItem('np_city_by_ip_ref', cityRef);
+                localStorage.setItem('np_city_by_ip_name', cityName);
+            }
+            
             if (savedCityRef && savedCityName) {
-                var savedCityInList = $popularCitiesList.find('.np_popular_city__btn[data-city-ref="' + savedCityRef + '"]');
-                if (savedCityInList.length > 0) {
-                    savedCityInList.first().prependTo($popularCitiesList);
-                    savedCityInList.first().attr('data-city-by-ip', 'true');
+                var existingCity = $popularCitiesList.find('.np_popular_city__btn[data-city-ref="' + savedCityRef + '"]');
+                if (existingCity.length > 0) {
+                    processCity(savedCityRef, savedCityName);
                     return;
                 }
             }
@@ -172,26 +162,7 @@
                         if (response && response.success && response.city) {
                             var cityRef = response.city.ref;
                             var cityName = response.city.name;
-                            
-                            var existingCity = $popularCitiesList.find('.np_popular_city__btn[data-city-ref="' + cityRef + '"]');
-                            if (existingCity.length > 0) {
-                                existingCity.first().prependTo($popularCitiesList);
-                                existingCity.first().attr('data-city-by-ip', 'true');
-                                localStorage.setItem('np_city_by_ip_ref', cityRef);
-                                localStorage.setItem('np_city_by_ip_name', cityName);
-                            } else {
-                                var $newCityBtn = $('<button>')
-                                    .attr('type', 'button')
-                                    .addClass('np_popular_city__btn')
-                                    .attr('data-city-ref', cityRef)
-                                    .attr('data-city-name', cityName)
-                                    .attr('data-city-by-ip', 'true')
-                                    .text(cityName);
-                                
-                                $popularCitiesList.prepend($newCityBtn);
-                                localStorage.setItem('np_city_by_ip_ref', cityRef);
-                                localStorage.setItem('np_city_by_ip_name', cityName);
-                            }
+                            processCity(cityRef, cityName);
                         }
                     },
                     error: function(xhr, status, error) {
@@ -201,6 +172,51 @@
             });
         }
         
+        function observeDeliveryModuleChanges() {
+            var observer = new MutationObserver(function(mutations) {
+                var shouldRestoreCity = false;
+                
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                        for (var i = 0; i < mutation.addedNodes.length; i++) {
+                            var node = mutation.addedNodes[i];
+                            if (node.nodeType === 1) {
+                                if ($(node).is('.np_popular_cities') || $(node).find('.np_popular_cities').length > 0) {
+                                    shouldRestoreCity = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                if (shouldRestoreCity) {
+                    setTimeout(function() {
+                        getCityByIpAndAddToList();
+                    }, 100);
+                }
+            });
+            
+            var deliveryModuleHtml = document.querySelector('.fn_delivery_module_html');
+            if (deliveryModuleHtml) {
+                observer.observe(deliveryModuleHtml, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+            
+            return observer;
+        }
+        
+        var deliveryModuleObserver = null;
+        
+        function initObserver() {
+            if (deliveryModuleObserver) {
+                deliveryModuleObserver.disconnect();
+            }
+            deliveryModuleObserver = observeDeliveryModuleChanges();
+        }
+        
         $(document).ready(function() {
             updateActiveCityButton();
             
@@ -208,13 +224,39 @@
                 getCityByIpAndAddToList();
             }, 500);
             
+            initObserver();
+            
             $(document).on('change', 'input[name="novaposhta_delivery_city_id"]', function() {
                 updateActiveCityButton();
             });
             
             $(document).on('change', 'input[name="delivery_id"]', function() {
                 setTimeout(updateActiveCityButton, 100);
-                setTimeout(getCityByIpAndAddToList, 200);
+                
+                var attempts = 0;
+                var maxAttempts = 10;
+                var checkInterval = setInterval(function() {
+                    attempts++;
+                    var $popularCitiesBlock = $('.np_popular_cities');
+                    var $popularCitiesList = $popularCitiesBlock.find('.np_popular_cities__list');
+                    
+                    if ($popularCitiesList.length > 0) {
+                        var savedCityRef = localStorage.getItem('np_city_by_ip_ref');
+                        var hasCityByIp = $popularCitiesList.find('.np_popular_city__btn[data-city-by-ip="true"]').length > 0;
+                        var hasCityRef = savedCityRef && $popularCitiesList.find('.np_popular_city__btn[data-city-ref="' + savedCityRef + '"]').length > 0;
+                        
+                        if (!hasCityByIp && hasCityRef) {
+                            clearInterval(checkInterval);
+                            getCityByIpAndAddToList();
+                            initObserver();
+                        } else if (hasCityByIp || attempts >= maxAttempts) {
+                            clearInterval(checkInterval);
+                            initObserver();
+                        }
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                    }
+                }, 200);
             });
             
             $(document).on('click', '.np_popular_city__btn', function(e) {
