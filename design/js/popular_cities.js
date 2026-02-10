@@ -79,7 +79,14 @@
         }
         
         function getCityByIpAndAddToList() {
-            var $popularCitiesBlock = $('.np_popular_cities');
+            var activeDelivery = $('input[name="delivery_id"]:checked');
+            if (!activeDelivery.length) {
+                return;
+            }
+            
+            var deliveryItem = activeDelivery.closest('.delivery__item');
+            var $popularCitiesBlock = deliveryItem.find('.np_popular_cities');
+            
             if (!$popularCitiesBlock.length) {
                 return;
             }
@@ -234,10 +241,19 @@
                 setTimeout(updateActiveCityButton, 100);
                 
                 var attempts = 0;
-                var maxAttempts = 10;
+                var maxAttempts = 15;
                 var checkInterval = setInterval(function() {
                     attempts++;
-                    var $popularCitiesBlock = $('.np_popular_cities');
+                    var activeDelivery = $('input[name="delivery_id"]:checked');
+                    if (!activeDelivery.length) {
+                        if (attempts >= maxAttempts) {
+                            clearInterval(checkInterval);
+                        }
+                        return;
+                    }
+                    
+                    var deliveryItem = activeDelivery.closest('.delivery__item');
+                    var $popularCitiesBlock = deliveryItem.find('.np_popular_cities');
                     var $popularCitiesList = $popularCitiesBlock.find('.np_popular_cities__list');
                     
                     if ($popularCitiesList.length > 0) {
