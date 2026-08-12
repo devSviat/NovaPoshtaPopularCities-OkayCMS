@@ -156,7 +156,13 @@ class NPCitiesApiHelper
         return $this->lastCallError;
     }
 
-    private function request(array $requestParams)
+    /**
+     * protected, а не private, щоб тест міг підмінити транспорт і перевірити
+     * класифікацію населених пунктів без походу в API Нової Пошти. Той самий
+     * прийом уже застосований в OkayCMS/NovaposhtaCost, де NPApiHelper::request
+     * узагалі публічний.
+     */
+    protected function request(array $requestParams)
     {
         if (empty($requestParams)) {
             return false;
@@ -200,7 +206,6 @@ class NPCitiesApiHelper
             $errno    = curl_errno($ch);
             $error    = curl_error($ch);
 
-            curl_close($ch);
 
             $tooManyRequests = false;
             if ($response !== false) {

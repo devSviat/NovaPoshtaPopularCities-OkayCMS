@@ -19,12 +19,10 @@ return [
             'method' => 'getCityByIp',
         ],
     ],
-    'Sviat_NovaPoshtaPopularCities_update_cities' => [
-        'slug' => 'backend/np/popular_cities/update_cities',
-        'to_front' => true,
-        'params' => [
-            'controller' => __NAMESPACE__ . '\Backend\Controllers\NPPopularCitiesAdmin',
-            'method' => 'updateCitiesAjax',
-        ],
-    ],
+    // Маршрут backend/np/popular_cities/update_cities прибрано: він вів через
+    // вітрину на NPPopularCitiesAdmin (нащадок IndexAdmin), якого контейнер там
+    // не збирає — конструктор чекає на $manager від backend/index.php. Кнопка
+    // «оновити міста» і так ходить на
+    // /backend/index.php?controller=Sviat.NovaPoshtaPopularCities.NPPopularCitiesAdmin@updateCitiesAjax,
+    // тобто через авторизований вхід адмінки.
 ];
