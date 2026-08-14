@@ -215,7 +215,10 @@ class NPCitiesApiHelper
                     && in_array('To many requests', $responseJson->errors, true)
                 ) {
                     $this->lastCallError = "To many requests";
-                    $this->logger->error('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
+                    // Всередині циклу ретраїв: після цього буде ще спроба, і вона
+                    // цілком може вдатись. Тому той самий рівень, що й у решти
+                    // ретраїв нижче, — інакше успішний виклик лишав по собі ERROR.
+                    $this->logger->warning('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
                     $tooManyRequests = true;
                 } else {
                     break;
@@ -224,7 +227,7 @@ class NPCitiesApiHelper
 
             if (!$tooManyRequests && !in_array($errno, $retryErrno, true)) {
                 $this->lastCallError = "CURL response code:$status error #{$errno}: {$error}";
-                $this->logger->error('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
+                $this->logger->warning('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
                 return false;
             }
 
@@ -243,13 +246,13 @@ class NPCitiesApiHelper
 
         if ($response === false) {
             $this->lastCallError = "CURL failed after {$maxRetries} retries. Last error #{$errno}: {$error}";
-            $this->logger->error('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
+            $this->logger->warning('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
             return false;
         }
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             $this->lastCallError = 'Invalid JSON response';
-            $this->logger->error('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
+            $this->logger->warning('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
             return false;
         }
 
@@ -260,14 +263,14 @@ class NPCitiesApiHelper
                 $this->settings->set('np_api_key_error', $this->lastCallError);
             }
 
-            $this->logger->error('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
+            $this->logger->warning('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
             return false;
         }
         
         if (!empty($responseJson->success)) {
             if (!isset($responseJson->data)) {
                 $this->lastCallError = 'Response data is empty';
-                $this->logger->error('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
+                $this->logger->warning('NovaPoshta Popular Cities API error: "' . $this->lastCallError . '"');
                 return false;
             }
             return $responseJson;
