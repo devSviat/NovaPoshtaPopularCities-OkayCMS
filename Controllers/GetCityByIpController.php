@@ -41,7 +41,9 @@ class GetCityByIpController
         }
         
         if (empty($clientIp)) {
-            $logger->error('[NovaPoshtaPopularCities] GetCityByIpController: IP is empty');
+            // Наш бік: за HTTP REMOTE_ADDR майже завжди є, тож порожній IP —
+            // це радше проксі/конфіг, ніж поведінка відвідувача.
+            $logger->warning('[NovaPoshtaPopularCities] GetCityByIpController: IP is empty');
             $response->setContent(json_encode([
                 'success' => false, 
                 'message' => 'IP not found'
@@ -59,8 +61,10 @@ class GetCityByIpController
         
         $apiResult = $this->getCityNameByIp($clientIp, $logger);
         
+        // Без логу: getCityNameByIp() уже написала, що саме не вдалось —
+        // або помилку конкретного API, або «All IP APIs failed». Другий рядок
+        // про ту саму подію лише дублював би її, до того ж без подробиць.
         if (!$apiResult || empty($apiResult['cityName'])) {
-            $logger->error('[NovaPoshtaPopularCities] GetCityByIpController: Could not determine city name from IP. Error: ' . ($apiResult['error'] ?? 'Unknown error'));
             $response->setContent(json_encode([
                 'success' => false, 
                 'message' => 'City not found'
@@ -88,7 +92,9 @@ class GetCityByIpController
         }
         
         if (!$city || empty($city->city_ref)) {
-            $logger->error('[NovaPoshtaPopularCities] GetCityByIpController: City not found in database. Searched translit: ' . $cityNameEn);
+            // Не помилка: відвідувач із міста, якого немає в довіднику Нової Пошти
+            // (інша країна, село поза списком). Штатний результат пошуку.
+            $logger->info('[NovaPoshtaPopularCities] GetCityByIpController: City not found in database. Searched translit: ' . $cityNameEn);
             $response->setContent(json_encode([
                 'success' => false, 
                 'message' => 'City not found in database'
@@ -177,7 +183,9 @@ class GetCityByIpController
             $lastError = $parsed;
         }
         
-        $logger->error('[NovaPoshtaPopularCities] GetCityByIpController: All IP APIs failed');
+        // Зовнішні гео-сервіси, не наш код: сайт працює, лише підказка міста
+        // не спрацювала.
+        $logger->warning('[NovaPoshtaPopularCities] GetCityByIpController: All IP APIs failed');
         return $lastError ?: ['error' => 'All IP APIs failed'];
     }
     
@@ -193,7 +201,6 @@ class GetCityByIpController
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
-        curl_close($ch);
         
         if ($curlError) {
             return ['error' => 'cURL error: ' . $curlError];
