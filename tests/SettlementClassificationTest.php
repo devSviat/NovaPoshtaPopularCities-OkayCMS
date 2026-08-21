@@ -201,19 +201,6 @@ class SettlementClassificationTest extends TestCase
 
     // --- пошук за назвою ----------------------------------------------------
 
-    /** У пошуку по назві лишаються тільки записи з кодом типу «м.» — тобто міста. */
-    public function testSearchKeepsOnlyCityTypeCodes(): void
-    {
-        $helper = $this->buildHelper([
-            ['SettlementTypeCode' => 'м.', 'Ref' => 'r1', 'DeliveryCity' => 'd1', 'MainDescription' => 'Львів'],
-            ['SettlementTypeCode' => 'с.', 'Ref' => 'r2', 'DeliveryCity' => 'd2', 'MainDescription' => 'Львівське'],
-            ['SettlementTypeCode' => 'смт', 'Ref' => 'r3', 'DeliveryCity' => 'd3', 'MainDescription' => 'Львівка'],
-            ['SettlementTypeCode' => ' м ', 'Ref' => 'r4', 'DeliveryCity' => 'd4', 'MainDescription' => 'Львовиця'],
-        ]);
-
-        self::assertSame(['Львів', 'Львовиця'], array_column($helper->searchSettlements('Львів'), 'city_name'));
-    }
-
     /**
      * Порівняння назви регістронезалежне й ігнорує пробіли по краях — інакше
      * визначення міста за назвою з форми не спрацьовувало б на «львів».
@@ -237,6 +224,59 @@ class SettlementClassificationTest extends TestCase
             'великими'     => ['ЛЬВІВ'],
             'із пробілами' => ['  Львів  '],
         ];
+    }
+
+    /**
+     * Справжня форма відповіді `AddressGeneral/searchSettlements`: населені
+     * пункти лежать не в `data[]`, а в `data[].Addresses[]`. Так її розбирає
+     * і сусідній модуль (`NovaPoshtaTracking\Services\NovaPoshtaDocumentService`).
+     *
+     * Поки цей рівень не розгортався, пошук за назвою не повертав нічого —
+     * `getCityRefByName()` завжди віддавав null, тобто ref доставки не
+     * знаходився взагалі.
+     */
+    public function testSearchReadsSettlementsNestedInAddresses(): void
+    {
+        $helper = $this->buildHelper([
+            [
+                'TotalCount' => 2,
+                'Addresses' => [
+                    (object) ['SettlementTypeCode' => 'м.', 'Ref' => 'r1', 'DeliveryCity' => 'd1', 'MainDescription' => 'Львів'],
+                    (object) ['SettlementTypeCode' => 'с.', 'Ref' => 'r2', 'DeliveryCity' => 'd2', 'MainDescription' => 'Львівське'],
+                ],
+            ],
+        ]);
+
+        self::assertSame(['Львів', 'Львівське'], array_column($helper->searchSettlements('Львів'), 'city_name'));
+    }
+
+    /** Плоска відповідь теж має розбиратись — на випадок зміни формату API. */
+    public function testSearchStillReadsAFlatResponse(): void
+    {
+        $helper = $this->buildHelper([
+            ['SettlementTypeCode' => 'м.', 'Ref' => 'r1', 'DeliveryCity' => 'd1', 'MainDescription' => 'Львів'],
+        ]);
+
+        self::assertSame(['Львів'], array_column($helper->searchSettlements('Львів'), 'city_name'));
+    }
+
+    /**
+     * Нова Пошта возить і в села, і в селища. Відсів за кодом «м.» лишав у
+     * довіднику самі міста, тож для решти населених пунктів ref не знаходився.
+     */
+    public function testSearchKeepsVillagesAndTownsToo(): void
+    {
+        $helper = $this->buildHelper([
+            [
+                'Addresses' => [
+                    (object) ['SettlementTypeCode' => 'м.', 'Ref' => 'r1', 'DeliveryCity' => 'd1', 'MainDescription' => 'Софіївська Борщагівка'],
+                    (object) ['SettlementTypeCode' => 'с.', 'Ref' => 'r2', 'DeliveryCity' => 'd2', 'MainDescription' => 'Петропавлівська Борщагівка'],
+                    (object) ['SettlementTypeCode' => 'смт', 'Ref' => 'r3', 'DeliveryCity' => 'd3', 'MainDescription' => 'Чабани'],
+                ],
+            ],
+        ]);
+
+        self::assertCount(3, $helper->searchSettlements('Борщагівка'));
     }
 
     /** Частковий збіг не годиться — потрібна саме та сама назва. */

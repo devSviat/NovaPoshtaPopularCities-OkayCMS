@@ -80,10 +80,18 @@ class GetCityByIpController
             
             if (!$city) {
                 $cityNameEnLower = mb_strtolower(trim($cityNameEn));
+                $cityNameNormalized = $this->normalizeTranslit($cityNameEn);
                 $settlements = $settlementsEntity->find();
+
                 foreach ($settlements as $s) {
-                    if (!empty($s->city_translit) && 
-                        mb_strtolower(trim($s->city_translit)) === $cityNameEnLower) {
+                    if (empty($s->city_translit)) {
+                        continue;
+                    }
+
+                    $settlementTranslitLower = mb_strtolower(trim($s->city_translit));
+                    if ($settlementTranslitLower === $cityNameEnLower
+                        || $this->normalizeTranslit($s->city_translit) === $cityNameNormalized
+                    ) {
                         $city = $s;
                         break;
                     }
@@ -113,6 +121,19 @@ class GetCityByIpController
         $response->setContent(json_encode($result), RESPONSE_JSON);
     }
     
+    private function normalizeTranslit(string $value): string
+    {
+        $value = strtolower(trim($value));
+
+        // Різні geo-IP сервіси та Нова Пошта можуть по-різному передавати
+        // українське "щ": shch / sch. Напр. Borshchahivka / Borschahivka.
+        $value = str_replace('shch', 'sch', $value);
+
+        // Для порівняння назви населеного пункту пробіли, дефіси та
+        // апострофи не повинні створювати різні ключі.
+        return preg_replace('/[^a-z0-9]+/u', '', $value) ?? $value;
+    }
+
     private function getClientIp(Request $request): string
     {
         $ipHeaders = [

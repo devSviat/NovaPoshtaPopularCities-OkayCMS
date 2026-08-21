@@ -174,7 +174,6 @@ class NPPopularCitiesAdmin extends IndexAdmin
 
             $savedCount = 0;
             $updatedCount = 0;
-            $processedCities = [];
             
             foreach ($settlementsMap as $ref => $settlement) {
                 $cityName = $settlement['city_name'] ?? '';
@@ -185,13 +184,14 @@ class NPPopularCitiesAdmin extends IndexAdmin
                 }
 
                 $cityNameLower = mb_strtolower(trim($cityName));
-                if (isset($processedCities[$cityNameLower])) {
-                    continue;
-                }
-                $processedCities[$cityNameLower] = true;
 
-                $cityRef = $cityRefMap[$cityNameLower] ?? '';
-                
+                // Якщо getSettlements уже повернув DeliveryCity — це
+                // найточніший ref для доставки. Інакше використовуємо старі
+                // способи зіставлення за назвою.
+                $cityRef = $settlement['city_ref'] ?? '';
+                if (empty($cityRef)) {
+                    $cityRef = $cityRefMap[$cityNameLower] ?? '';
+                }
                 if (empty($cityRef)) {
                     $cityRef = $apiHelper->getCityRefByName($cityName);
                 }
@@ -296,7 +296,6 @@ class NPPopularCitiesAdmin extends IndexAdmin
 
             $savedCount = 0;
             $updatedCount = 0;
-            $processedCities = [];
             
             foreach ($settlementsMap as $ref => $settlement) {
                 $cityName = $settlement['city_name'] ?? '';
@@ -307,13 +306,14 @@ class NPPopularCitiesAdmin extends IndexAdmin
                 }
 
                 $cityNameLower = mb_strtolower(trim($cityName));
-                if (isset($processedCities[$cityNameLower])) {
-                    continue;
-                }
-                $processedCities[$cityNameLower] = true;
 
-                $cityRef = $cityRefMap[$cityNameLower] ?? '';
-                
+                // Якщо getSettlements уже повернув DeliveryCity — це
+                // найточніший ref для доставки. Інакше використовуємо старі
+                // способи зіставлення за назвою.
+                $cityRef = $settlement['city_ref'] ?? '';
+                if (empty($cityRef)) {
+                    $cityRef = $cityRefMap[$cityNameLower] ?? '';
+                }
                 if (empty($cityRef)) {
                     $cityRef = $apiHelper->getCityRefByName($cityName);
                 }

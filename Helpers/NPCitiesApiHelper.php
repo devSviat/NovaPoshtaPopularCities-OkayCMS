@@ -59,21 +59,41 @@ class NPCitiesApiHelper
         ];
 
         $response = $this->request($request);
-        if (!empty($response->success) && !empty($response->data)) {
-            $result = [];
-            foreach ($response->data as $settlement) {
-                if (!empty($settlement->SettlementTypeCode) && 
-                    (trim($settlement->SettlementTypeCode) === 'м.' || trim($settlement->SettlementTypeCode) === 'м')) {
-                    $result[] = [
-                        'ref' => $settlement->Ref ?? '',
-                        'city_ref' => $settlement->DeliveryCity ?? '',
-                        'city_name' => $settlement->MainDescription ?? '',
-                    ];
-                }
-            }
-            return $result;
+        if (empty($response->success) || empty($response->data)) {
+            return [];
         }
-        return [];
+
+        $result = [];
+        foreach ($response->data as $item) {
+            // searchSettlements повертає записи всередині data[].Addresses.
+            // Підтримуємо також плоску відповідь на випадок зміни формату API.
+            $addresses = [];
+            if (!empty($item->Addresses) && is_iterable($item->Addresses)) {
+                $addresses = $item->Addresses;
+            } else {
+                $addresses = [$item];
+            }
+
+            foreach ($addresses as $settlement) {
+                $ref = $settlement->Ref ?? '';
+                $cityRef = $settlement->DeliveryCity ?? '';
+                $name = $settlement->MainDescription ?? ($settlement->Description ?? '');
+
+                if ($ref === '' || $name === '') {
+                    continue;
+                }
+
+                // Не фільтруємо лише типом "м.". Нова Пошта обслуговує також
+                // села/селища, а IP-геолокація цілком може повернути їх назву.
+                $result[] = [
+                    'ref' => $ref,
+                    'city_ref' => $cityRef,
+                    'city_name' => $name,
+                ];
+            }
+        }
+
+        return $result;
     }
 
     public function getCityRefByName(string $cityName): ?string
