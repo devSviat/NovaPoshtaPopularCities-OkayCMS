@@ -18,4 +18,6 @@ $lang['sviat_np_popular_cities_update_success'] = 'Cities updated successfully';
 $lang['sviat_np_popular_cities_update_error'] = 'Error updating';
 $lang['sviat_np_popular_cities_settings_error'] = 'Error saving settings';
 $lang['sviat_np_popular_cities_error_prefix'] = 'Error: ';
+$lang['sviat_np_popular_cities_error_timeout'] = 'Request timed out. Try again — what has been imported is kept.';
+$lang['sviat_np_popular_cities_error_aborted'] = 'connection aborted';
 $lang['sviat_np_popular_cities_select_city_validation'] = 'Please select a city from the list';

@@ -327,6 +327,11 @@
                     // і кнопка мовчки нічого не оновлює — назовні це "Forbidden".
                     data: { session_id: {/literal}'{$smarty.session.id}'{literal} },
                     dataType: 'json',
+                    // Без явного таймаута обірваний запит просто висить: смуга
+                    // доходить до кінця й лишається так назавжди. 150s — більше
+                    // за межу PHP (120s) і за fastcgi_read_timeout (140s), тож
+                    // спершу спрацює той бік, який уміє пояснити причину.
+                    timeout: 150000,
                     success: function(data) {
                         clearInterval(progressInterval);
                         progressItem.attr('value', 100);
@@ -361,9 +366,18 @@
                         clearInterval(progressInterval);
                         progressItem.attr('value', 100).hide();
 
+                        // errorThrown порожній, коли відповіді не було взагалі —
+                        // обрив на шлюзі. Тоді єдине, що ми знаємо, це статус
+                        // jQuery і код HTTP; без них у полі лишалось голе
+                        // "Помилка:", і причину доводилось шукати наосліп.
+                        var reason = errorThrown
+                            || (status === 'timeout' ? {/literal}'{$btr->sviat_np_popular_cities_error_timeout|escape}'{literal} : '')
+                            || (xhr.status ? 'HTTP ' + xhr.status : status)
+                            || {/literal}'{$btr->sviat_np_popular_cities_error_aborted|escape}'{literal};
+
                         setTimeout(function() {
                             resultBlock
-                                .text({/literal}'{$btr->sviat_np_popular_cities_error_prefix|escape}'{literal} + errorThrown)
+                                .text({/literal}'{$btr->sviat_np_popular_cities_error_prefix|escape}'{literal} + reason)
                                 .addClass('alert alert--error')
                                 .css('padding', '5px')
                                 .fadeIn(500);
