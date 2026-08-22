@@ -18,4 +18,6 @@ $lang['sviat_np_popular_cities_update_success'] = 'Города успешно �
 $lang['sviat_np_popular_cities_update_error'] = 'Ошибка при обновлении';
 $lang['sviat_np_popular_cities_settings_error'] = 'Ошибка при сохранении настроек';
 $lang['sviat_np_popular_cities_error_prefix'] = 'Ошибка: ';
+$lang['sviat_np_popular_cities_error_timeout'] = 'Превышено время ожидания. Попробуйте ещё раз — уже загруженное сохранится.';
+$lang['sviat_np_popular_cities_error_aborted'] = 'соединение прервано';
 $lang['sviat_np_popular_cities_select_city_validation'] = 'Пожалуйста, выберите город из списка';

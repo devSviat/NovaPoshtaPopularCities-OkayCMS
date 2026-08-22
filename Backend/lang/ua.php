@@ -18,4 +18,6 @@ $lang['sviat_np_popular_cities_update_success'] = 'Міста успішно о�
 $lang['sviat_np_popular_cities_update_error'] = 'Помилка при оновленні';
 $lang['sviat_np_popular_cities_settings_error'] = 'Помилка при збереженні налаштувань';
 $lang['sviat_np_popular_cities_error_prefix'] = 'Помилка: ';
+$lang['sviat_np_popular_cities_error_timeout'] = 'Перевищено час очікування. Спробуйте ще раз — уже завантажене збережеться.';
+$lang['sviat_np_popular_cities_error_aborted'] = 'зʼєднання обірвано';
 $lang['sviat_np_popular_cities_select_city_validation'] = 'Будь ласка, виберіть місто зі списку';

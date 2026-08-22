@@ -11,6 +11,7 @@ use Okay\Core\ServiceLocator;
 use Okay\Modules\OkayCMS\NovaposhtaCost\Entities\NPCitiesEntity;
 use Okay\Modules\Sviat\NovaPoshtaPopularCities\Entities\NPPopularCitiesEntity;
 use Okay\Modules\Sviat\NovaPoshtaPopularCities\Entities\NPSettlementsEntity;
+use Okay\Modules\Sviat\NovaPoshtaPopularCities\Helpers\CityNameMatcher;
 use Okay\Modules\Sviat\NovaPoshtaPopularCities\Helpers\NPCitiesApiHelper;
 
 class NPPopularCitiesAdmin extends IndexAdmin
@@ -133,25 +134,7 @@ class NPPopularCitiesAdmin extends IndexAdmin
                 }
             }
 
-            $cityRefMap = [];
-            $citiesPage = 1;
-            
-            do {
-                $cities = $apiHelper->getCities($citiesPage, $limit);
-                if (!empty($cities)) {
-                    foreach ($cities as $city) {
-                        if (!empty($city['city_name']) && !empty($city['city_ref'])) {
-                            $cityName = mb_strtolower(trim($city['city_name']));
-                            if (!isset($cityRefMap[$cityName])) {
-                                $cityRefMap[$cityName] = $city['city_ref'];
-                            }
-                        }
-                    }
-                    $citiesPage++;
-                } else {
-                    break;
-                }
-            } while (count($cities) >= $limit);
+            $cityRefMap = $apiHelper->getCityRefsByName($limit);
 
             $savedCount = 0;
             $updatedCount = 0;
@@ -164,14 +147,13 @@ class NPPopularCitiesAdmin extends IndexAdmin
                     continue;
                 }
 
-                $cityNameLower = mb_strtolower(trim($cityName));
-
                 // Якщо getSettlements уже повернув DeliveryCity — це
-                // найточніший ref для доставки. Інакше використовуємо старі
-                // способи зіставлення за назвою.
+                // найточніший ref для доставки. Далі — зіставлення за назвою,
+                // і аж тоді окремий запит: кожне таке місто коштує виклику
+                // до API, а їх у цьому запиті й так під сотню.
                 $cityRef = $settlement['city_ref'] ?? '';
                 if (empty($cityRef)) {
-                    $cityRef = $cityRefMap[$cityNameLower] ?? '';
+                    $cityRef = $cityRefMap[CityNameMatcher::directoryNameKey($cityName)] ?? '';
                 }
                 if (empty($cityRef)) {
                     $cityRef = $apiHelper->getCityRefByName($cityName);
@@ -236,25 +218,7 @@ class NPPopularCitiesAdmin extends IndexAdmin
                 }
             }
 
-            $cityRefMap = [];
-            $citiesPage = 1;
-            
-            do {
-                $cities = $apiHelper->getCities($citiesPage, $limit);
-                if (!empty($cities)) {
-                    foreach ($cities as $city) {
-                        if (!empty($city['city_name']) && !empty($city['city_ref'])) {
-                            $cityName = mb_strtolower(trim($city['city_name']));
-                            if (!isset($cityRefMap[$cityName])) {
-                                $cityRefMap[$cityName] = $city['city_ref'];
-                            }
-                        }
-                    }
-                    $citiesPage++;
-                } else {
-                    break;
-                }
-            } while (count($cities) >= $limit);
+            $cityRefMap = $apiHelper->getCityRefsByName($limit);
 
             $savedCount = 0;
             $updatedCount = 0;
@@ -267,14 +231,13 @@ class NPPopularCitiesAdmin extends IndexAdmin
                     continue;
                 }
 
-                $cityNameLower = mb_strtolower(trim($cityName));
-
                 // Якщо getSettlements уже повернув DeliveryCity — це
-                // найточніший ref для доставки. Інакше використовуємо старі
-                // способи зіставлення за назвою.
+                // найточніший ref для доставки. Далі — зіставлення за назвою,
+                // і аж тоді окремий запит: кожне таке місто коштує виклику
+                // до API, а їх у цьому запиті й так під сотню.
                 $cityRef = $settlement['city_ref'] ?? '';
                 if (empty($cityRef)) {
-                    $cityRef = $cityRefMap[$cityNameLower] ?? '';
+                    $cityRef = $cityRefMap[CityNameMatcher::directoryNameKey($cityName)] ?? '';
                 }
                 if (empty($cityRef)) {
                     $cityRef = $apiHelper->getCityRefByName($cityName);

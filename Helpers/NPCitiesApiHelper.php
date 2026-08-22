@@ -206,6 +206,41 @@ class NPCitiesApiHelper
         return $all;
     }
 
+    /**
+     * Назва міста доставки → її ref, усі сторінки `getCities`.
+     *
+     * Ключ нормалізований: інакше «Золочів (Львівська обл.)» не сходиться з
+     * «Золочів» із getSettlements, і кожне таке місто йде окремим запитом до
+     * API. На живому довіднику це різниця між 61 і 7 додатковими запитами.
+     *
+     * @return array<string, string>
+     */
+    public function getCityRefsByName(int $limit = 500, int $maxPages = 200): array
+    {
+        $map = [];
+
+        for ($page = 1; $page <= $maxPages; $page++) {
+            $cities = $this->getCities($page, $limit);
+
+            foreach ($cities as $city) {
+                if (empty($city['city_name']) || empty($city['city_ref'])) {
+                    continue;
+                }
+
+                $key = CityNameMatcher::directoryNameKey($city['city_name']);
+                if ($key !== '' && !isset($map[$key])) {
+                    $map[$key] = $city['city_ref'];
+                }
+            }
+
+            if (count($cities) < $limit) {
+                break;
+            }
+        }
+
+        return $map;
+    }
+
     public function getLastCallError(): string
     {
         return $this->lastCallError;
