@@ -10,6 +10,7 @@ use Okay\Core\Settings;
 use Okay\Core\EntityFactory;
 use Psr\Log\LoggerInterface;
 use Okay\Modules\Sviat\NovaPoshtaPopularCities\Entities\NPSettlementsEntity;
+use Okay\Modules\Sviat\NovaPoshtaPopularCities\Helpers\CityNameMatcher;
 
 class GetCityByIpController
 {
@@ -77,21 +78,21 @@ class GetCityByIpController
         
         if (!empty($cityNameEn)) {
             $city = $settlementsEntity->findOne(['city_translit' => $cityNameEn]);
-            
+
             if (!$city) {
-                $cityNameEnLower = mb_strtolower(trim($cityNameEn));
-                $cityNameNormalized = $this->normalizeTranslit($cityNameEn);
-                $settlements = $settlementsEntity->find();
+                // Перебір у пам'яті, а не запит під кожне написання: довідник —
+                // це міста Нової Пошти, кілька сотень рядків, і окремий
+                // нормалізований стовпець з індексом коштував би міграції.
+                // noLimit явний: LIMIT тут не діє лише поки у фільтрі немає
+                // page, а фільтр приходить через ExtenderFacade.
+                $settlements = $settlementsEntity->noLimit()->find();
 
                 foreach ($settlements as $s) {
                     if (empty($s->city_translit)) {
                         continue;
                     }
 
-                    $settlementTranslitLower = mb_strtolower(trim($s->city_translit));
-                    if ($settlementTranslitLower === $cityNameEnLower
-                        || $this->normalizeTranslit($s->city_translit) === $cityNameNormalized
-                    ) {
+                    if (CityNameMatcher::matches($cityNameEn, $s->city_translit)) {
                         $city = $s;
                         break;
                     }
@@ -100,8 +101,9 @@ class GetCityByIpController
         }
         
         if (!$city || empty($city->city_ref)) {
-            // Не помилка: відвідувач із міста, якого немає в довіднику Нової Пошти
-            // (інша країна, село поза списком). Штатний результат пошуку.
+            // Не завжди «інша країна чи село»: сюди ж потрапляє написання, якого
+            // не знає CityNameMatcher. Тому в рядку є саме та форма, яку віддав
+            // сервіс, — її досить, щоб додати аліас.
             $logger->info('[NovaPoshtaPopularCities] GetCityByIpController: City not found in database. Searched translit: ' . $cityNameEn);
             $response->setContent(json_encode([
                 'success' => false, 
@@ -121,19 +123,6 @@ class GetCityByIpController
         $response->setContent(json_encode($result), RESPONSE_JSON);
     }
     
-    private function normalizeTranslit(string $value): string
-    {
-        $value = strtolower(trim($value));
-
-        // Різні geo-IP сервіси та Нова Пошта можуть по-різному передавати
-        // українське "щ": shch / sch. Напр. Borshchahivka / Borschahivka.
-        $value = str_replace('shch', 'sch', $value);
-
-        // Для порівняння назви населеного пункту пробіли, дефіси та
-        // апострофи не повинні створювати різні ключі.
-        return preg_replace('/[^a-z0-9]+/u', '', $value) ?? $value;
-    }
-
     private function getClientIp(Request $request): string
     {
         $ipHeaders = [
