@@ -323,6 +323,9 @@
                 $.ajax({
                     url: "/backend/index.php?controller=Sviat.NovaPoshtaPopularCities.NPPopularCitiesAdmin@updateCitiesAjax",
                     type: 'POST',
+                    // Без session_id гард CSRF відповідає 403 ще до контролера,
+                    // і кнопка мовчки нічого не оновлює — назовні це "Forbidden".
+                    data: { session_id: {/literal}'{$smarty.session.id}'{literal} },
                     dataType: 'json',
                     success: function(data) {
                         clearInterval(progressInterval);

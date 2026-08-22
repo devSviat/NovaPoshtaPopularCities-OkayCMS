@@ -10,6 +10,13 @@ use Psr\Log\LoggerInterface;
 class NPCitiesApiHelper
 {
     private string $lastCallError = '';
+
+    /**
+     * Скільки записів віддала остання сторінка getSettlements ДО відсіву сіл.
+     * Саме за цим числом видно, чи є ще сторінки: відфільтрований результат
+     * майже завжди менший за ліміт, бо міст серед населених пунктів меншість.
+     */
+    private int $lastSettlementsPageSize = 0;
     private Settings $settings;
     private LoggerInterface $logger;
 
@@ -120,6 +127,8 @@ class NPCitiesApiHelper
         ];
 
         $response = $this->request($request);
+        $this->lastSettlementsPageSize = empty($response->data) ? 0 : count((array) $response->data);
+
         if (!empty($response->success) && !empty($response->data)) {
             $result = [];
             
@@ -169,6 +178,32 @@ class NPCitiesApiHelper
             return $result;
         }
         return [];
+    }
+
+    /**
+     * Усі міста довідника, посторінково.
+     *
+     * Пагінацію веде сира кількість записів на сторінці, а не кількість міст
+     * після відсіву: сторінка з самих лише сіл — звичайна річ, і зупинятись
+     * на ній означало б втратити весь хвіст довідника.
+     */
+    public function getAllCitySettlements(int $limit = 500, int $maxPages = 200): array
+    {
+        $all = [];
+
+        for ($page = 1; $page <= $maxPages; $page++) {
+            $cities = $this->getSettlements($page, $limit);
+
+            if (!empty($cities)) {
+                $all = array_merge($all, $cities);
+            }
+
+            if ($this->lastSettlementsPageSize < $limit) {
+                break;
+            }
+        }
+
+        return $all;
     }
 
     public function getLastCallError(): string

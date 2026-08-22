@@ -118,27 +118,8 @@ class NPPopularCitiesAdmin extends IndexAdmin
     private function updateCitiesFromApi(NPCitiesApiHelper $apiHelper, NPSettlementsEntity $settlementsEntity): void
     {
         try {
-            $allSettlements = [];
-            $page = 1;
             $limit = 500;
-            $maxPages = 200;
-            
-            do {
-                $settlements = $apiHelper->getSettlements($page, $limit);
-                if (!empty($settlements)) {
-                    $allSettlements = array_merge($allSettlements, $settlements);
-                    
-                    if (count($settlements) < $limit) {
-                        $nextSettlements = $apiHelper->getSettlements($page + 1, $limit);
-                        if (empty($nextSettlements) || count($nextSettlements) === 0) {
-                            break;
-                        }
-                    }
-                    $page++;
-                } else {
-                    break;
-                }
-            } while ($page <= $maxPages);
+            $allSettlements = $apiHelper->getAllCitySettlements($limit);
 
             if (empty($allSettlements)) {
                 $this->design->assign('error_message', 'Не вдалося отримати міста з API (getSettlements). ' . $apiHelper->getLastCallError());
@@ -238,27 +219,8 @@ class NPPopularCitiesAdmin extends IndexAdmin
         $settlementsEntity = $entityFactory->get(NPSettlementsEntity::class);
         
         try {
-            $allSettlements = [];
-            $page = 1;
             $limit = 500;
-            $maxPages = 200;
-            
-            do {
-                $settlements = $apiHelper->getSettlements($page, $limit);
-                if (!empty($settlements)) {
-                    $allSettlements = array_merge($allSettlements, $settlements);
-                    
-                    if (count($settlements) < $limit) {
-                        $nextSettlements = $apiHelper->getSettlements($page + 1, $limit);
-                        if (empty($nextSettlements) || count($nextSettlements) === 0) {
-                            break;
-                        }
-                    }
-                    $page++;
-                } else {
-                    break;
-                }
-            } while ($page <= $maxPages);
+            $allSettlements = $apiHelper->getAllCitySettlements($limit);
 
             if (empty($allSettlements)) {
                 return $this->response->setContent(json_encode([
