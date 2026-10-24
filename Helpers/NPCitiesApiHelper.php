@@ -349,7 +349,7 @@ class NPCitiesApiHelper
         if (!empty($responseJson->errors)) {
             $this->lastCallError = implode('<br>', (array) $responseJson->errors);
 
-            if (strpos($this->lastCallError, 'API key') !== false) {
+            if (str_contains($this->lastCallError, 'API key')) {
                 $this->settings->set('np_api_key_error', $this->lastCallError);
             }
 

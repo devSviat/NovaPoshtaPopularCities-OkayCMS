@@ -20,18 +20,18 @@ class Init extends AbstractInit
         $this->setBackendMainController('NPPopularCitiesAdmin');
 
         $this->migrateEntityTable(NPPopularCitiesEntity::class, [
-            (new EntityField('id'))->setIndexPrimaryKey()->setTypeInt(11, false)->setAutoIncrement(),
-            (new EntityField('city_ref'))->setTypeVarchar(255)->setIndex(),
-            (new EntityField('position'))->setTypeInt(11)->setDefault(0)->setIndex(),
+            new EntityField('id')->setIndexPrimaryKey()->setTypeInt(11, false)->setAutoIncrement(),
+            new EntityField('city_ref')->setTypeVarchar(255)->setIndex(),
+            new EntityField('position')->setTypeInt(11)->setDefault(0)->setIndex(),
         ]);
 
         $this->migrateEntityTable(NPSettlementsEntity::class, [
-            (new EntityField('id'))->setIndexPrimaryKey()->setTypeInt(11, false)->setAutoIncrement(),
-            (new EntityField('ref'))->setTypeVarchar(255)->setIndex(),
-            (new EntityField('city_ref'))->setTypeVarchar(255)->setIndex(),
-            (new EntityField('city_name'))->setTypeVarchar(255)->setIndex(),
-            (new EntityField('city_translit'))->setTypeVarchar(255)->setNullable(),
-            (new EntityField('updated_at'))->setTypeDateTime()->setNullable(),
+            new EntityField('id')->setIndexPrimaryKey()->setTypeInt(11, false)->setAutoIncrement(),
+            new EntityField('ref')->setTypeVarchar(255)->setIndex(),
+            new EntityField('city_ref')->setTypeVarchar(255)->setIndex(),
+            new EntityField('city_name')->setTypeVarchar(255)->setIndex(),
+            new EntityField('city_translit')->setTypeVarchar(255)->setNullable(),
+            new EntityField('updated_at')->setTypeDateTime()->setNullable(),
         ]);
     }
 
