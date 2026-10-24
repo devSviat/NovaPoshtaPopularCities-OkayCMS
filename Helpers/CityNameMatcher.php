@@ -88,7 +88,7 @@ class CityNameMatcher
 
         // Довідник Нової Пошти місцями містить не транслітерацію, а англійський
         // підпис: «Бершадь» лежить як «City of Bershad».
-        if (strpos($value, 'city of ') === 0) {
+        if (str_starts_with($value, 'city of ')) {
             $value = substr($value, 8);
         }
 
@@ -109,7 +109,7 @@ class CityNameMatcher
         // Пробіли, дефіси та апострофи не повинні створювати різні ключі.
         $key = preg_replace('/[^a-z0-9]+/u', '', $value);
 
-        return $key === null ? $value : $key;
+        return $key ?? $value;
     }
 
     /**
@@ -130,7 +130,7 @@ class CityNameMatcher
         // Подвоєння теж різняться схемами: Odessa / Odesa.
         $folded = preg_replace('/(.)\1+/', '$1', $key);
 
-        return $folded === null ? $key : $folded;
+        return $folded ?? $key;
     }
 
     /**
@@ -140,7 +140,7 @@ class CityNameMatcher
     {
         $key = self::key($geoIpName);
 
-        return isset(self::$aliases[$key]) ? self::$aliases[$key] : $key;
+        return self::$aliases[$key] ?? $key;
     }
 
     /**

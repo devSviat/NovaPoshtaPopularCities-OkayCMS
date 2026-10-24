@@ -17,7 +17,7 @@ class FrontExtender implements ExtensionInterface
     private Design $design;
     private Settings $settings;
     private ?int $npModuleId = null;
-    private const NP_MODULE_NAMESPACE = 'Okay\Modules\OkayCMS\NovaposhtaCost\Extenders\FrontExtender';
+    private const string NP_MODULE_NAMESPACE = \Okay\Modules\OkayCMS\NovaposhtaCost\Extenders\FrontExtender::class;
 
     public function __construct(
         EntityFactory $entityFactory,
